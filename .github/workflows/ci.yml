@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python ${{ matrix.python }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.11", "3.12", "3.13"]
+        include:
+          # The production target: macOS with the Python version setup installs.
+          - os: macos-latest
+            python: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -e '.[dev]'
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest
+
+  shell:
+    name: Shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck -x -s bash setup/install.sh setup/lib/common.sh setup/steps/*.sh bin/agent-session
+      - run: shellcheck -s sh bin/macagent bin/macagent-hook
+
+  macos-setup:
+    name: Setup dry run (macOS, bash 3.2)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check with the system bash (3.2)
+        run: for f in setup/install.sh setup/lib/common.sh setup/steps/*.sh bin/agent-session; do /bin/bash -n "$f"; done
+      - name: Lint launchd plists
+        run: plutil -lint config/launchd/*.plist
+      - name: Dry run of the full setup
+        run: /bin/bash setup/install.sh --dry-run
