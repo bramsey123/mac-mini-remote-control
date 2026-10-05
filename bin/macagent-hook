@@ -1,0 +1,5 @@
+#!/bin/sh
+# Claude Code PreToolUse hook, registered in managed-settings.json.
+# Installed to /usr/local/lib/macagent/bin/macagent-hook (root-owned).
+# Takes no arguments on purpose: its behavior is fixed by root-owned files.
+exec /usr/local/lib/macagent/venv/bin/python -I -m macagent hook

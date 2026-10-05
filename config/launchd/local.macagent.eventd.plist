@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Event daemon: records every agent tool call and hosts the AI watcher slot.
+  Runs as the _agentwatch service account so the agent cannot stop it,
+  read its secrets or rewrite the event log.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.macagent.eventd</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/lib/macagent/bin/macagent</string>
+        <string>eventd</string>
+    </array>
+    <key>UserName</key>
+    <string>_agentwatch</string>
+    <key>GroupName</key>
+    <string>_agentwatch</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    <key>Umask</key>
+    <integer>23</integer>
+    <key>StandardOutPath</key>
+    <string>/Library/Logs/MacAgent/eventd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Library/Logs/MacAgent/eventd.err.log</string>
+</dict>
+</plist>

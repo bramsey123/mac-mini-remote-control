@@ -1,0 +1,48 @@
+# MacAgent configuration.
+#
+# Installed to /Library/Application Support/MacAgent/config.toml (root-owned,
+# not readable by the agent). Setup copies this file there only if none exists;
+# after that, edit the installed copy and validate it with:
+#   sudo macagent config-check
+# Unknown keys are rejected on purpose — a typo in a security setting should
+# fail loudly rather than be silently ignored.
+
+# The dedicated, non-admin account the agent runs as.
+agent_user = "agent"
+
+[notify]
+# "none" or "ntfy". ntfy (https://ntfy.sh) pushes to the ntfy phone app.
+backend = "none"
+server = "https://ntfy.sh"
+# Anyone who knows a public ntfy topic can read it: make it long and random,
+# e.g. the output of `openssl rand -hex 16`, or use a token with a reserved topic.
+topic = ""
+# Optional: file containing an ntfy access token (keep it in the secrets dir).
+# token_file = "/Library/Application Support/MacAgent/secrets/ntfy-token"
+
+[health]
+# Alert when the newest Time Machine backup is older than this.
+backup_max_age_hours = 26
+# true = FileVault must be on; false = must be off (you chose unattended
+# restart over disk encryption). Leave unset to just report the state.
+# expect_filevault = true
+# A failing check re-notifies at most this often.
+reminder_interval_hours = 6
+tmux_path = "/opt/homebrew/bin/tmux"
+tailscale_path = "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+agent_session_name = "agent"
+
+[watcher]
+# The AI watcher slot (docs/watcher.md). Everything works with it off.
+#   backend: "none" until a real backend is installed.
+#   mode:    "off"     — never consulted
+#            "observe" — sees every event afterwards, can only alert
+#            "gate"    — also asked before each tool call; may ask or deny
+#   timeout_seconds: in-band time budget (max 6); slower answers are dropped
+#                    and the tool call continues on the baseline.
+backend = "none"
+mode = "off"
+timeout_seconds = 5
+
+# Backend-specific settings go in this table.
+# [watcher.options]
