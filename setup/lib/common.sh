@@ -76,8 +76,13 @@ is_admin() {
     dseditgroup -o checkmember -m "$1" admin 2>/dev/null | grep -q '^yes'
 }
 
+# Prints the account's home directory, or nothing if the account doesn't exist.
+# Always succeeds: callers use `home=$(home_of …)` under `set -e`, where a
+# failing lookup would otherwise end the script before it can explain why.
 home_of() {
-    dscl . -read "/Users/$1" NFSHomeDirectory 2>/dev/null | awk '{print $2}'
+    local record
+    record=$(dscl . -read "/Users/$1" NFSHomeDirectory 2>/dev/null) || return 0
+    printf '%s\n' "$record" | awk '{print $2}'
 }
 
 # First unused id in [lo, hi] for the given dscl attribute (UniqueID / PrimaryGroupID).
