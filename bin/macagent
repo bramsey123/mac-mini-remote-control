@@ -1,0 +1,7 @@
+#!/bin/sh
+# Installed to /usr/local/lib/macagent/bin/macagent (root-owned).
+#
+# -I (isolated mode) makes Python ignore PYTHON* environment variables, the
+# user site-packages directory and the current directory, so nothing the agent
+# controls can change which code runs here.
+exec /usr/local/lib/macagent/venv/bin/python -I -m macagent "$@"

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Health check: every 15 minutes, verify the protections are still in place
+  and push a notification when something changes. Runs as root because some
+  checks (backups, other accounts' files) need it.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.macagent.healthcheck</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/lib/macagent/bin/macagent</string>
+        <string>check</string>
+        <string>--notify</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StartInterval</key>
+    <integer>900</integer>
+    <key>StandardOutPath</key>
+    <string>/Library/Logs/MacAgent/healthcheck.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Library/Logs/MacAgent/healthcheck.err.log</string>
+</dict>
+</plist>

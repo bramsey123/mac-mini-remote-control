@@ -1,0 +1,102 @@
+#!/bin/bash
+# Manage the agent's long-running Claude Code session.
+#
+# Run as the agent account (e.g. over SSH: sudo -iu agent agent-session start).
+# The session lives in tmux, so it survives SSH disconnects, and runs
+# `claude remote-control`, so you can drive it from the Claude app on your phone.
+#
+# Usage: agent-session start | attach | status | stop
+set -euo pipefail
+
+SESSION="${MACAGENT_SESSION:-agent}"
+WORKDIR="${MACAGENT_WORKDIR:-$HOME/work}"
+ENV_FILE="$HOME/.config/macagent/agent.env"
+CLAUDE_BIN="$HOME/.local/bin/claude"
+TMUX_BIN="$(command -v tmux 2>/dev/null || echo /opt/homebrew/bin/tmux)"
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
+die() { echo "agent-session: $*" >&2; exit 1; }
+
+refuse_privileged() {
+    if [ "$(id -u)" -eq 0 ]; then
+        die "refusing to run as root; run as the agent account"
+    fi
+    if id -Gn | tr ' ' '\n' | grep -qx admin; then
+        die "refusing to run as an admin account; the agent must be a standard user"
+    fi
+}
+
+running() { "$TMUX_BIN" has-session -t "$SESSION" 2>/dev/null; }
+
+cmd_start() {
+    refuse_privileged
+    [ -x "$CLAUDE_BIN" ] || die "Claude Code not found at $CLAUDE_BIN (see docs/setup-guide.md)"
+    if running; then
+        echo "session '$SESSION' already running; attach with: agent-session attach"
+        return 0
+    fi
+    mkdir -p "$WORKDIR"
+    "$TMUX_BIN" new-session -d -s "$SESSION" -c "$WORKDIR" "$SELF" _run
+    echo "started session '$SESSION' in $WORKDIR"
+    echo "attach with: agent-session attach   (detach again with Ctrl-b d)"
+}
+
+# Internal: the command tmux runs. Loads the agent's secrets into the
+# environment and keeps `claude remote-control` running, backing off if it
+# keeps exiting (for example, when the login has expired).
+cmd_run() {
+    refuse_privileged
+    if [ -f "$ENV_FILE" ]; then
+        set -a
+        # shellcheck disable=SC1090
+        . "$ENV_FILE"
+        set +a
+    fi
+    cd "$WORKDIR"
+    local delay=5
+    while true; do
+        local started
+        started=$(date +%s)
+        echo "[$(date '+%F %T')] starting claude remote-control in $WORKDIR"
+        "$CLAUDE_BIN" remote-control || true
+        if [ $(( $(date +%s) - started )) -gt 300 ]; then
+            delay=5
+        else
+            delay=$(( delay * 2 > 300 ? 300 : delay * 2 ))
+        fi
+        echo "[$(date '+%F %T')] claude exited; restarting in ${delay}s (Ctrl-C to stop)"
+        sleep "$delay"
+    done
+}
+
+cmd_attach() {
+    running || die "session '$SESSION' is not running; start it with: agent-session start"
+    exec "$TMUX_BIN" attach -t "$SESSION"
+}
+
+cmd_status() {
+    if running; then
+        echo "running"
+    else
+        echo "stopped"
+        return 1
+    fi
+}
+
+cmd_stop() {
+    if running; then
+        "$TMUX_BIN" kill-session -t "$SESSION"
+        echo "stopped session '$SESSION'"
+    else
+        echo "session '$SESSION' is not running"
+    fi
+}
+
+case "${1:-}" in
+    start) cmd_start ;;
+    attach) cmd_attach ;;
+    status) cmd_status ;;
+    stop) cmd_stop ;;
+    _run) cmd_run ;;
+    *) echo "usage: agent-session start|attach|status|stop" >&2; exit 2 ;;
+esac

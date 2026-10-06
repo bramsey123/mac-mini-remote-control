@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "defaultMode": "auto",
+    "disableBypassPermissionsMode": "disable",
+    "deny": [
+      "Read(~/.config/macagent/**)",
+      "Edit(~/.config/macagent/**)",
+      "Read(~/.ssh/**)",
+      "Edit(~/.claude/settings.json)",
+      "Edit(~/.claude/settings.local.json)"
+    ]
+  },
+  "allowManagedPermissionRulesOnly": true,
+  "allowManagedHooksOnly": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/lib/macagent/bin/macagent-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
